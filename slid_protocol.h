@@ -1,10 +1,12 @@
 #ifndef SLID_PROTOCOL_H
     #define SLID_PROTOCOL_H
 
+    #include <stdint.h>
+
     struct window   {
-        //int 
-        //int
-        //int
+        uint64_t ;
+        uint64_t ;
+        uint8_t flag;                                                                   // Flag que define tipo da mensagem.
     };
 
 #endif /* SLID_PROTOCOL_H */
