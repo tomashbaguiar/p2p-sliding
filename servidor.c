@@ -55,10 +55,10 @@ int main(int argc, char **argv){
 			while(!feof(p_arquivo)){
 				//fscanf(p_arquivo,"%[^\n]s",buffer); //grava uma parte do arquivo no buffer
 				fgets(buffer,tam_buffer,p_arquivo);
-				if(!feof(p_arquivo)){
+				//if(!feof(p_arquivo)){
 					dados_enviados = tp_sendto(socket, buffer, tam_buffer, &addr); //envia os dados
 					printf("enviou %s\n",buffer);
-				}
+				//}
 			}
 			dados_enviados = tp_sendto(socket, "###", tam_buffer, &addr);// flag indicando o fim da transmição 
 			printf("enviou flag de fim de arquivo");
