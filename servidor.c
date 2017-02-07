@@ -75,7 +75,6 @@ int main(int argc, char **argv){
 		while(!sair){
                 while((SWS > (LFS - LAR)) && !enviou)   {
                 
-                    //fgets(buffer,tam_buffer,p_arquivo);
                     int i = 0;
                     for(i = 0; (i < tam_buffer) && !feof(p_arquivo); i++)   
                         buffer[i] = fgetc(p_arquivo);                                           // Buffer recebe o arquivo.
@@ -90,13 +89,19 @@ int main(int argc, char **argv){
                     else    {
                         attr->seqNum = seqNum++;
                         attr->message = buffer;
-                        //strcpy(attr->message, buffer);
                         attr->flag = 0;
                     }
 
                     LFS++;                                                                      // Incrementa o ultimo enviado.
-                    pthread_create(&framet[LFS % SWS], NULL, frame_send, (void *) attr);
-                    sleep(1);
+
+                    /* Coloca a mensagem no pacote junto com o cabeçalho */
+                    pacote.header.seqNum = attr->seqNum;
+                    pacote.header.ackNum = 0;
+                    pacote.header.flag = attr->flag;
+                    strcpy(pacote.Msg, attr->message);
+                    proto_sendto(socket, &pacote, addr);
+
+                    pthread_create(&framet[LFS % SWS], NULL, frame_send, (void *) attr);        // Envia as informaçoes para a thread de reenvio.
                     memset(buffer, 0, tam_buffer);                                              // Zera o buffer.
                 }
                 int seqNumAck = proto_recvfrom(socket, addr, &pacote);                          // Recebe ackNum.

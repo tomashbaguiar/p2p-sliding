@@ -20,8 +20,8 @@ frame_send(void *arg)
     /*  Loop ate a thread ser terminada no programa principal   */
     while(1)    {
         printf("Enviando pacote de seqNum [%d].\n", pacote.header.seqNum);
-        proto_sendto(args->socket, &pacote, args->addr);
         sleep(TIMER);                                                                       // Tempo de espera para reenvio.
+        proto_sendto(args->socket, &pacote, args->addr);
     }
 }
 

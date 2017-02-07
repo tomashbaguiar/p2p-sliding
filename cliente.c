@@ -58,7 +58,6 @@ int main(int argc, char **argv){
 		dados_recebidos=0;
 		printf("ARQUIVO NAO ENCONTRADO\n");
 	}else if(strcmp(buffer, "||\0")==0){
-		//p_arquivo=fopen(nome_arquivo,"w");
 		p_arquivo=fopen("output.txt","w");
 
         int seqNum = 0;
@@ -73,8 +72,7 @@ int main(int argc, char **argv){
 
             if((seqNumToAck == (LFR + 1)) && 
                 (seqNumToAck == recebido[seqNumToAck % RWS].header.seqNum) &&
-                    (seqNumToAck >= 0) /*&& 
-                        (recebido[seqNumToAck % RWS].header.flag != 2)*/)  {
+                    (seqNumToAck >= 0))  {
 
                 if(recebido[seqNumToAck % RWS].header.flag == 2)    {                           // Verifica flag de fim de arquivo.
                     printf("Final do arquivo.\n");
@@ -85,20 +83,10 @@ int main(int argc, char **argv){
 
 
                 ack_frame(seqNumToAck, socket, addr);                                           // ACK seqNum.
-                //printf("[%d]:[%s]\n", seqNumToAck, recebido[seqNumToAck % RWS].Msg);
                 LFR = seqNumToAck++;                                                            // Incrementa ultimo pacote recebido.
                 LAF = LFR + RWS;                                                                // Incrementa maior seqNum aceitavel.
 
 			}
-            /*
-            else if(recebido[seqNumToAck % RWS].header.flag == 2)   {
-                if(strcmp(recebido[seqNumToAck % RWS].Msg, "###") == 0)
-                    seqNum = -1;
-                printf("Final do arquivo.\n");
-                ack_frame(seqNumToAck, socket, addr);
-                LFR = seqNumToAck;
-                LAF = LFR + RWS;
-            }*/
         }
 
     }
