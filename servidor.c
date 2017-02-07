@@ -33,7 +33,6 @@ int main(int argc, char **argv){
 		}
 
 	so_addr addr;
-	//char buffer[tam_buffer];
 	char nome_arquivo[tam_buffer];
 
 	int dados_recebidos = tp_recvfrom(socket, nome_arquivo, tam_buffer, &addr); //recebe o nome do arquivo
@@ -55,9 +54,6 @@ int main(int argc, char **argv){
 
     Frame pacote;
 
-
-
-	
 	printf("NOME ARQUIVO %s\n",nome_arquivo); 
 	printf("O BUFFER EH %s\n",buffer);
 	printf(" TAMANHO DA STRING %d\n",strlen(nome_arquivo));
@@ -70,43 +66,58 @@ int main(int argc, char **argv){
 	p_arquivo = fopen(diretorio, "r");  
 	
 	if(p_arquivo==NULL){ //caso o arquivo não seja encontrado, será enviado um flag para o cliente
-		dados_enviados = tp_sendto(socket, "&&", tam_buffer, &addr); //flag enviada para o cliente
+		dados_enviados = tp_sendto(socket, "&&\0", 3 * sizeof(char), &addr); //flag enviada para o cliente
 	}else{ //caso o arquivo seja encontrado
-        dados_enviados = tp_sendto(socket, "||", tam_buffer, &addr); //flag enviada para o cliente
-		while(!feof(p_arquivo)){
+        dados_enviados = tp_sendto(socket, "||\0", 3 * sizeof(char), &addr); //flag enviada para o cliente
 
+        int sair = 0;
+        int enviou = 0;
+		while(!sair){
+                while(SWS > (LFS - LAR) && !enviou)   {
+                
+                    //fgets(buffer,tam_buffer,p_arquivo);
+                    for(int i = 0; (i < tam_buffer) && !feof(p_arquivo); i++)
+                        buffer[i] = fgetc(p_arquivo);
 
-            while(SWS > (LFS - LAR))   {
+                    if(feof(p_arquivo)) {
+                        attr->seqNum = seqNum;
+                        strcpy(attr->message, "###");
+                        attr->flag = 2;
+		                printf("enviou flag de fim de arquivo\n");
+                        enviou = 1;
+                    }
+                    else    {
+                        attr->seqNum = seqNum++;
+                        attr->message = buffer;
+                        attr->flag = 0;
+                    }
 
+                    LFS++;
+                    pthread_create(&framet[LFS % SWS], NULL, frame_send, (void *) attr);
+                    printf("Criando thread [%d - %u].\n", (LFS % SWS), framet[LFS % SWS]);
+                    printf("[%s]\n", buffer);
+                    sleep(1);
+                }
+                int seqNumAck = proto_recvfrom(socket, addr, &pacote);                                // Recebe ackNum.
+                if(seqNumAck == (LAR + 1))  {
+                    LAR++;
+                    printf("Matando a thread de [%d - %u].\n", (LAR % SWS), framet[LAR % SWS]);
+                    //pthread_kill(framet[LAR % SWS], SIGINT);
+                    pthread_cancel(framet[LAR % SWS]);
+                }
 
-                fgets(buffer,tam_buffer,p_arquivo);
-                attr->seqNum = seqNum++;
-                attr->message = buffer;
-                printf("Criando thread [%d].\n", (LFS % SWS));
-                pthread_create(&framet[LFS % SWS], NULL, frame_send, (void *) attr);
-                LFS++;
-                sleep(1);
+                if(LAR == LFS)                                                                          // Sinaliza final de arquivo.
+                    sair = 1;
+
             }
-            int seqNumAck = proto_recvfrom(socket, addr, &pacote);                                // Recebe ackNum.
-            if(seqNumAck == (LAR + 1))  {
-                LAR++;
-                printf("Matando a thread de %d.\n", (LAR % SWS));
-                //pthread_kill(framet[LAR % SWS], SIGKILL);
-                pthread_cancel(framet[LAR % SWS]);
-            }
+    }
+                        
+		                fclose(p_arquivo);
+                        free(buffer);
+                        free(framet);
+                        free(attr);
+                        tp_mtu();
 
-			//dados_enviados = tp_sendto(socket, buffer, tam_buffer, &addr); //envia os dados
-		}
 
-        Frame pacote;
-        pacote.header.flag = 2;                                                                 // Flag de fim de arquio.
-        pacote.header.seqNum = LFS + 1;
-        pacote.header.ackNum = 0;
-        strcpy(pacote.Msg, "###");
-        proto_sendto(socket, &pacote, addr);
-        
-		printf("enviou flag de fim de arquivo");
-		fclose(p_arquivo);
-	}
-	tp_mtu();
+    return 0;
 }

@@ -5,7 +5,7 @@
     #include <sys/socket.h>
     #include <netinet/in.h>
 
-    #define TIMER 5
+    #define TIMER 1
 
     /*  Estrutura que define o cabeçalho do protocolo   */
     typedef struct window   {
@@ -21,13 +21,14 @@
         struct sockaddr_in6 addr;                                                               // Recebe as informaçoes do peer.
         uint64_t seqNum;                                                                        // Recebe o numero de sequencia do pacote.
         char *message;                                                                          // Ponteiro para o buffer contendo a mensagem.
+        uint8_t flag;                                                                           // Flag de envio.
     }
     Thread_arg;
 
     /*  Estrutura que guarda o pacote a ser enviado */
     typedef struct frame    {
         SWheader header;                                                                        // Recebe o cabeçalho do pacote a ser enviado.
-        char *Msg;                                                                              // Recebe a mensagem a ser enviada.
+        char Msg[4000];                                                                         // Recebe a mensagem a ser enviada.
     }
     Frame;
 
