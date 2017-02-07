@@ -48,11 +48,11 @@ int main(int argc, char **argv){
     attr->addr = addr;
     attr->socket = socket;
 
-    char *buffer = (char *) malloc(tam_buffer * sizeof(char));
+    char *buffer = (char *) malloc(tam_buffer * sizeof(char));                                  // Buffer que recebera as partes do arquivo.
 
-    uint64_t seqNum = 0;
+    uint64_t seqNum = 0;                                                                        // Numero de controle.
 
-    Frame pacote;
+    Frame pacote;                                                                               // Pacote que recebe as mensagens.
 
 	printf("NOME ARQUIVO %s\n",nome_arquivo); 
 	printf("O BUFFER EH %s\n",buffer);
@@ -73,13 +73,14 @@ int main(int argc, char **argv){
         int sair = 0;
         int enviou = 0;
 		while(!sair){
-                while(SWS > (LFS - LAR) && !enviou)   {
+                while((SWS > (LFS - LAR)) && !enviou)   {
                 
                     //fgets(buffer,tam_buffer,p_arquivo);
-                    for(int i = 0; (i < tam_buffer) && !feof(p_arquivo); i++)
-                        buffer[i] = fgetc(p_arquivo);
+                    int i = 0;
+                    for(i = 0; (i < tam_buffer) && !feof(p_arquivo); i++)   
+                        buffer[i] = fgetc(p_arquivo);                                           // Buffer recebe o arquivo.
 
-                    if(feof(p_arquivo)) {
+                    if(feof(p_arquivo) && (i == 0)) {                                           // Se o arquivo acabou e o buffer esta vazio.
                         attr->seqNum = seqNum;
                         strcpy(attr->message, "###");
                         attr->flag = 2;
@@ -89,19 +90,18 @@ int main(int argc, char **argv){
                     else    {
                         attr->seqNum = seqNum++;
                         attr->message = buffer;
+                        //strcpy(attr->message, buffer);
                         attr->flag = 0;
                     }
 
-                    LFS++;
+                    LFS++;                                                                      // Incrementa o ultimo enviado.
                     pthread_create(&framet[LFS % SWS], NULL, frame_send, (void *) attr);
-                    printf("Criando thread [%d - %u].\n", (LFS % SWS), framet[LFS % SWS]);
-                    printf("[%s]\n", buffer);
                     sleep(1);
+                    memset(buffer, 0, tam_buffer);                                              // Zera o buffer.
                 }
-                int seqNumAck = proto_recvfrom(socket, addr, &pacote);                                // Recebe ackNum.
+                int seqNumAck = proto_recvfrom(socket, addr, &pacote);                          // Recebe ackNum.
                 if(seqNumAck == (LAR + 1))  {
                     LAR++;
-                    printf("Matando a thread de [%d - %u].\n", (LAR % SWS), framet[LAR % SWS]);
                     //pthread_kill(framet[LAR % SWS], SIGINT);
                     pthread_cancel(framet[LAR % SWS]);
                 }

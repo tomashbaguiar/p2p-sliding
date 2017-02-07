@@ -5,7 +5,7 @@
     #include <sys/socket.h>
     #include <netinet/in.h>
 
-    #define TIMER 1
+    #define TIMER 1                                                                             // Tempo entre reenvios.
 
     /*  Estrutura que define o cabeçalho do protocolo   */
     typedef struct window   {

@@ -35,7 +35,7 @@ int main(int argc, char **argv){
 	if(tp_build_addr(&addr, ip ,  porta)==-1){
 		return -1;
 	} ; 
-    char *buffer = (char *) malloc(tam_buffer * sizeof(char));
+    char *buffer = (char *) malloc(tam_buffer * sizeof(char));                                  // Buffer que recebe o arquivo.
 	strcpy(buffer,nome_arquivo);
 	printf("O BUFFER EH %s\n",buffer);
 
@@ -65,23 +65,32 @@ int main(int argc, char **argv){
 		while(seqNum != -1) {
             seqNum = proto_recvfrom(socket, addr, &pacote);
             if((seqNum <= LFR) || (seqNum > LAF))   
-                printf("Descartando o pacote [%d].\n", seqNum);                         // Descarta o pacote.
+                printf("Descartando o pacote [%d].\n", seqNum);                                 // Descarta o pacote.
             else if((seqNum > LFR) && (seqNum <= LAF))  {
-                recebido[seqNum % RWS] = pacote;
+                recebido[seqNum % RWS] = pacote;                                                // Recebe o pacote na memoria.
                 printf("Recebido pacote de [%d].\n", seqNum);
             }
 
             if((seqNumToAck == (LFR + 1)) && 
                 (seqNumToAck == recebido[seqNumToAck % RWS].header.seqNum) &&
-                    (seqNumToAck >= 0) && 
-                        (recebido[seqNumToAck % RWS].header.flag != 2))  {
+                    (seqNumToAck >= 0) /*&& 
+                        (recebido[seqNumToAck % RWS].header.flag != 2)*/)  {
 
-                ack_frame(seqNumToAck, socket, addr);
-                fprintf(p_arquivo,"%s",recebido[seqNumToAck % RWS].Msg);
-                printf("[%s]\n", recebido[seqNumToAck % RWS].Msg);
-                LFR = seqNumToAck++;
-                LAF = LFR + RWS;
+                if(recebido[seqNumToAck % RWS].header.flag == 2)    {                           // Verifica flag de fim de arquivo.
+                    printf("Final do arquivo.\n");
+                    seqNum = -1;
+                }
+                else 
+                    fprintf(p_arquivo,"%s",recebido[seqNumToAck % RWS].Msg);                    // Coloca o buffer no arquivo.
+
+
+                ack_frame(seqNumToAck, socket, addr);                                           // ACK seqNum.
+                //printf("[%d]:[%s]\n", seqNumToAck, recebido[seqNumToAck % RWS].Msg);
+                LFR = seqNumToAck++;                                                            // Incrementa ultimo pacote recebido.
+                LAF = LFR + RWS;                                                                // Incrementa maior seqNum aceitavel.
+
 			}
+            /*
             else if(recebido[seqNumToAck % RWS].header.flag == 2)   {
                 if(strcmp(recebido[seqNumToAck % RWS].Msg, "###") == 0)
                     seqNum = -1;
@@ -89,7 +98,7 @@ int main(int argc, char **argv){
                 ack_frame(seqNumToAck, socket, addr);
                 LFR = seqNumToAck;
                 LAF = LFR + RWS;
-            }
+            }*/
         }
 
     }
@@ -100,5 +109,7 @@ int main(int argc, char **argv){
 	
 	printf("depois do fclose\n");
 	tp_mtu();
+
+    return 0;
 	
 }
