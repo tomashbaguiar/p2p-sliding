@@ -73,55 +73,55 @@ int main(int argc, char **argv){
         int sair = 0;
         int enviou = 0;
 		while(!sair){
-                while((SWS > (LFS - LAR)) && !enviou)   {
-                
-                    int i = 0;
-                    for(i = 0; (i < tam_buffer) && !feof(p_arquivo); i++)   
-                        buffer[i] = fgetc(p_arquivo);                                           // Buffer recebe o arquivo.
+            while((SWS > (LFS - LAR)) && !enviou)   {
+            
+                int i = 0;
+                for(i = 0; (i < tam_buffer) && !feof(p_arquivo); i++)   
+                    buffer[i] = fgetc(p_arquivo);                                               // Buffer recebe o arquivo.
 
-                    if(feof(p_arquivo) && (i == 0)) {                                           // Se o arquivo acabou e o buffer esta vazio.
-                        attr->seqNum = seqNum;
-                        strcpy(attr->message, "###");
-                        attr->flag = 2;
-		                printf("enviou flag de fim de arquivo\n");
-                        enviou = 1;
-                    }
-                    else    {
-                        attr->seqNum = seqNum++;
-                        attr->message = buffer;
-                        attr->flag = 0;
-                    }
-
-                    LFS++;                                                                      // Incrementa o ultimo enviado.
-
-                    /* Coloca a mensagem no pacote junto com o cabeçalho */
-                    pacote.header.seqNum = attr->seqNum;
-                    pacote.header.ackNum = 0;
-                    pacote.header.flag = attr->flag;
-                    strcpy(pacote.Msg, attr->message);
-                    proto_sendto(socket, &pacote, addr);
-
-                    pthread_create(&framet[LFS % SWS], NULL, frame_send, (void *) attr);        // Envia as informaçoes para a thread de reenvio.
-                    memset(buffer, 0, tam_buffer);                                              // Zera o buffer.
+                if(feof(p_arquivo) && (i == 0)) {                                               // Se o arquivo acabou e o buffer esta vazio.
+                    attr->seqNum = seqNum;
+                    strcpy(attr->message, "###");
+                    attr->flag = 2;
+	                printf("enviou flag de fim de arquivo\n");
+                    enviou = 1;
                 }
-                int seqNumAck = proto_recvfrom(socket, addr, &pacote);                          // Recebe ackNum.
-                if(seqNumAck == (LAR + 1))  {
-                    LAR++;
-                    //pthread_kill(framet[LAR % SWS], SIGINT);
-                    pthread_cancel(framet[LAR % SWS]);
+                else    {
+                    attr->seqNum = seqNum++;
+                    attr->message = buffer;
+                    attr->flag = 0;
                 }
 
-                if(LAR == LFS)                                                                          // Sinaliza final de arquivo.
-                    sair = 1;
+                LFS++;                                                                          // Incrementa o ultimo enviado.
 
+                /* Coloca a mensagem no pacote junto com o cabeçalho */
+                pacote.header.seqNum = attr->seqNum;
+                pacote.header.ackNum = 0;
+                pacote.header.flag = attr->flag;
+                strcpy(pacote.Msg, attr->message);
+                proto_sendto(socket, &pacote, addr);
+
+                pthread_create(&framet[LFS % SWS], NULL, frame_send, (void *) attr);            // Envia as informaçoes para a thread de reenvio.
+                memset(buffer, 0, tam_buffer);                                                  // Zera o buffer.
             }
+            int seqNumAck = proto_recvfrom(socket, addr, &pacote);                              // Recebe ackNum.
+            if(seqNumAck == (LAR + 1))  {
+                LAR++;
+                //pthread_kill(framet[LAR % SWS], SIGINT);
+                pthread_cancel(framet[LAR % SWS]);
+            }
+
+            if(LAR == LFS)                                                                      // Sinaliza final de arquivo.
+                sair = 1;
+
+        }
     }
                         
-		                fclose(p_arquivo);
-                        free(buffer);
-                        free(framet);
-                        free(attr);
-                        tp_mtu();
+    fclose(p_arquivo);
+    free(buffer);
+    free(framet);
+    free(attr);
+    tp_mtu();
 
 
     return 0;
